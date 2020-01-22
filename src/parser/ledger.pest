@@ -1,0 +1,70 @@
+
+any_data_single_line = @{ (!NEWLINE ~ ANY)* }
+blank = @{ ("\t" | " ") }
+
+year = @{ '1'..'9' ~ ASCII_DIGIT ~ ASCII_DIGIT ~ ASCII_DIGIT }
+month = @{ (("0")? ~ '1'..'9') | ("1" ~ '0'..'2') }
+day = @{("0"? ~ '1'..'9') | ('1'..'2' ~ ASCII_DIGIT) | ("3" ~ '0'..'1')}
+date_separator = @{"/" | "-"}
+date = @{year ~ date_separator ~ month ~ date_separator ~ day}
+
+account_name = @{
+  (
+    !(NEWLINE | SPACE_SEPARATOR) ~ ANY ~
+    (
+      &SPACE_SEPARATOR ~
+      (
+        (!NEWLINE ~ ANY) ~ !(NEWLINE | SPACE_SEPARATOR) ~ ANY
+      )
+    )?
+  )+
+}
+
+comment_line = _{ (";" | "#" | "%" | "|" | "*") ~ any_data_single_line }
+
+transaction_code = @{ blank+ ~ "(" ~ (!")" ~ any_data_single_line) ~ ")" }
+transaction_description = @{ blank+ ~ any_data_single_line }
+transaction_state = @{ blank+ ~ ("*" | "!")? }
+transaction_header = @{
+  date ~ ("=" ~ date)? ~
+  transaction_state? ~
+  transaction_code? ~
+  transaction_description?
+}
+
+transaction = @{
+  transaction_header ~
+  NEWLINE ~
+  blank+ ~ account_name
+}
+
+journal = {
+  SOI ~
+  ((comment_line | transaction)? ~ NEWLINE)* ~
+  EOI
+}
+
+date_check = {
+  SOI ~
+  month ~
+  EOI
+}
+
+account_name_check = {
+  SOI ~
+  account_name ~
+  EOI
+}
+
+comment_line_check = {
+  SOI ~
+  comment_line ~
+  EOI
+}
+
+
+transaction_header_check = {
+  SOI ~
+  transaction_header ~
+  EOI
+}
